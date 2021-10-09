@@ -1,0 +1,22 @@
+﻿@page "/authentication/{action}"
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+
+@inject ApiClient apiClient
+
+<RemoteAuthenticatorView Action="@Action" />
+
+<AuthorizeView>
+    <Authorized>
+        @(this.OnAuthorized())
+    </Authorized>
+</AuthorizeView>
+
+@code{
+    [Parameter] public string? Action { get; set; }
+
+    public async ValueTask<string> OnAuthorized()
+    {
+        await this.apiClient.NotifySignInAsync();
+        return string.Empty;
+    }
+}

@@ -1,0 +1,103 @@
+﻿@page "/teams"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+
+@attribute [Authorize]
+@inject ApiClient apiClient
+@inject NavigationManager navigationManager
+@inject StateContainer stateContainer
+
+<PageTitle>Teams</PageTitle>
+
+@if (this.stateContainer.IsInProgress)
+{
+    <div class="py-2 px-2">
+        <div class="progress">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" style="width: 75%"></div>
+        </div>
+    </div>
+}
+
+<ModalDialog Title="@this.DialogHeader" OnConfirmCallback="OnConfirmAsync">
+    <div>
+        <label for="newTeamNameInput" class="form-label">Team Name</label>
+        <input class="form-control" type="text" id="newTeamNameInput" placeholder="Name" @bind="this.NewTeamName">
+    </div>
+</ModalDialog>
+
+@if (this.stateContainer.Teams != null)
+{
+    <div class="py-2 px-2">
+        <button class="btn btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#modalDialog" @onclick="StartAddTeam">Add Team</button>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Team</th>
+                <th>Users</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var team in this.stateContainer.Teams)
+            {
+                <tr>
+                    <td>@team.Name</td>
+                    <td>@(team.Users?.Count ?? 0)</td>
+                    <td><button class="btn btn-outline-primary" type="button" @onclick="(e) => EditTeam(team)">Edit</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+
+    private string NewTeamName { get; set; }
+
+    private string DialogHeader { get; set; }
+
+    private Func<Task> ConfirmActionAsync { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (this.stateContainer.Teams.Count == 0)
+        {
+            await this.FetchTeamsAsync();
+        }
+    }
+
+    private async Task OnConfirmAsync(MouseEventArgs e)
+    {
+        await this.ConfirmActionAsync();
+    }
+
+    private async Task FetchTeamsAsync()
+    {
+        await this.stateContainer.TryFetchTeamsAsync(this.apiClient);
+    }
+
+    private void StartAddTeam()
+    {
+        this.NewTeamName = string.Empty;
+        this.DialogHeader = "Add New Team";
+        this.ConfirmActionAsync = this.AddTeam;
+    }
+
+    private async Task AddTeam()
+    {
+        var team = new Team()
+        {
+            Id = Guid.NewGuid(),
+            Name = this.NewTeamName,
+            Users = new List<TeamUser>()
+        };
+        await this.stateContainer.TryCreateTeamAsync(this.apiClient, team);
+        await this.stateContainer.TryFetchTeamsAsync(this.apiClient);
+    }
+
+    private void EditTeam(Team team)
+    {
+        this.navigationManager.NavigateTo($"teams/{team.Id}");
+    }
+}
