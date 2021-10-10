@@ -17,7 +17,7 @@ builder.Services.AddSingleton<StateContainer>();
 builder.Services.AddMsalAuthentication(options =>
 {
     builder.Configuration.Bind("AzureAd", options.ProviderOptions.Authentication);
-    options.ProviderOptions.DefaultAccessTokenScopes.Add("api://f41a4f5a-37d2-4e7a-a0fb-5bcd55c34496/API.ReadWrite");
+    builder.Configuration.Bind("AzureAdScopes", options.ProviderOptions.DefaultAccessTokenScopes);
 });
 
 await builder.Build().RunAsync();
