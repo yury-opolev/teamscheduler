@@ -36,6 +36,22 @@ namespace TeamSchedule.Server.Controllers
         [HttpPost]
         public IActionResult CreateTeam([FromBody]Team team)
         {
+            this.logger.LogInformation($"{nameof(CreateTeam)} - user '{User.Identity.Name}'");
+            var teamExists = !(this.context.Teams.FirstOrDefault(t => t.Name.Equals(team.Name)) is default(Team));
+            if (teamExists)
+            {
+                return this.Conflict(new { Status = "conflict", Message = "Team already exists" });
+            }
+
+            this.context.Teams.Add(team);
+            this.context.SaveChanges();
+
+            return this.Ok(new { Status = "ok", Message = "Team created" });
+        }
+
+        [HttpPut]
+        public IActionResult UpdateTeam([FromBody] Team team)
+        {
             this.logger.LogInformation($"CreateTeam - user '{User.Identity.Name}'");
             var teamExists = !(this.context.Teams.FirstOrDefault(t => t.Name.Equals(team.Name)) is default(Team));
             if (teamExists)

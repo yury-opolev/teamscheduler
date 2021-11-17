@@ -1,103 +1,59 @@
 ﻿@page "/teams"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using System.Linq.Dynamic.Core
 
 @attribute [Authorize]
 @inject ApiClient apiClient
 @inject NavigationManager navigationManager
 @inject StateContainer stateContainer
 
+@inject DialogService DialogService
+
 <PageTitle>Teams</PageTitle>
 
-@if (this.stateContainer.IsInProgress)
-{
-    <div class="py-2 px-2">
-        <div class="progress">
-            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" style="width: 75%"></div>
-        </div>
-    </div>
-}
+<RadzenButton Icon="add_circle_outline" style="margin-bottom: 10px" Text="Add" Click="@OpenInsertDialog" />
 
-<ModalDialog Title="@this.DialogHeader" OnConfirmCallback="OnConfirmAsync">
-    <div>
-        <label for="newTeamNameInput" class="form-label">Team Name</label>
-        <input class="form-control" type="text" id="newTeamNameInput" placeholder="Name" @bind="this.NewTeamName">
-    </div>
-</ModalDialog>
-
-@if (this.stateContainer.Teams != null)
-{
-    <div class="py-2 px-2">
-        <button class="btn btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#modalDialog" @onclick="StartAddTeam">Add Team</button>
-    </div>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Team</th>
-                <th>Users</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var team in this.stateContainer.Teams)
-            {
-                <tr>
-                    <td>@team.Name</td>
-                    <td>@(team.Users?.Count ?? 0)</td>
-                    <td><button class="btn btn-outline-primary" type="button" @onclick="(e) => EditTeam(team)">Edit</button></td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+<RadzenDataGrid IsLoading="@this.stateContainer.IsInProgress" Count="@this.teams.Count()" Data="@this.teams" LoadData="@LoadData" AllowFiltering="true" AllowColumnResize="true" FilterMode="FilterMode.Simple" PageSize="20" AllowPaging="true" AllowSorting="true" 
+ TItem="Team" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.And">
+    <Columns>
+        <RadzenDataGridColumn TItem="Team" Property="Name" Filterable="true" Title="Name" Frozen="true" Width="70px" />
+    </Columns>
+</RadzenDataGrid>
 
 @code {
 
-    private string NewTeamName { get; set; }
+    private int count { get; set; }
 
-    private string DialogHeader { get; set; }
-
-    private Func<Task> ConfirmActionAsync { get; set; }
+    private IEnumerable<Team> teams { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        if (this.stateContainer.Teams.Count == 0)
+        this.teams = Array.Empty<Team>();
+        await this.stateContainer.TryFetchTeamsAsync(this.apiClient);
+    }
+
+    private void LoadData(LoadDataArgs args)
+    {
+        var query = this.stateContainer.Teams.AsQueryable();
+
+        if (!string.IsNullOrEmpty(args.Filter))
         {
-            await this.FetchTeamsAsync();
+            query = query.Where(args.Filter);
         }
-    }
 
-    private async Task OnConfirmAsync(MouseEventArgs e)
-    {
-        await this.ConfirmActionAsync();
-    }
-
-    private async Task FetchTeamsAsync()
-    {
-        await this.stateContainer.TryFetchTeamsAsync(this.apiClient);
-    }
-
-    private void StartAddTeam()
-    {
-        this.NewTeamName = string.Empty;
-        this.DialogHeader = "Add New Team";
-        this.ConfirmActionAsync = this.AddTeam;
-    }
-
-    private async Task AddTeam()
-    {
-        var team = new Team()
+        if (!string.IsNullOrEmpty(args.OrderBy))
         {
-            Id = Guid.NewGuid(),
-            Name = this.NewTeamName,
-            Users = new List<TeamUser>()
-        };
-        await this.stateContainer.TryCreateTeamAsync(this.apiClient, team);
-        await this.stateContainer.TryFetchTeamsAsync(this.apiClient);
+            query = query.OrderBy(args.OrderBy);
+        }
+
+        this.teams = query.Skip(args.Skip.Value).Take(args.Top.Value).ToList();
     }
 
-    private void EditTeam(Team team)
+    public async Task OpenInsertDialog()
     {
-        this.navigationManager.NavigateTo($"teams/{team.Id}");
+        await DialogService.OpenAsync<TeamCardPage>("Add new team",
+            new Dictionary<string, object>() { { "TeamID", Guid.Empty } },
+            new DialogOptions() { Width = "700px", Height = "500px", Resizable = true, Draggable = false });
     }
 }

@@ -30,6 +30,11 @@ namespace TeamSchedule.Client.Core
             return await this.RunActionAsync(async () => { await apiClient.CreateTeam(team); });
         }
 
+        public async Task<bool> TryUpdateTeamAsync(ApiClient apiClient, Team team)
+        {
+            return await this.RunActionAsync(async () => { await apiClient.UpdateTeam(team); });
+        }
+
         public async Task<bool> RunActionAsync(Func<Task> action)
         {
             this.IsInProgress = true;

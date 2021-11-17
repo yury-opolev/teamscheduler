@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Radzen;
 using TeamSchedule.Client;
 using TeamSchedule.Client.Core;
 
@@ -13,6 +14,11 @@ builder.Services.AddHttpClient("TeamSchedule.ServerAPI", client => client.BaseAd
 
 builder.Services.AddScoped<ApiClient>();
 builder.Services.AddSingleton<StateContainer>();
+
+builder.Services.AddScoped<DialogService>();
+builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<TooltipService>();
+builder.Services.AddScoped<ContextMenuService>();
 
 builder.Services.AddMsalAuthentication(options =>
 {
