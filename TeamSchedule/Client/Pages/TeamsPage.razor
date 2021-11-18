@@ -9,7 +9,7 @@
 @inject NavigationManager navigationManager
 @inject StateContainer stateContainer
 
-@inject DialogService DialogService
+@inject DialogService dialogService
 
 <PageTitle>Teams</PageTitle>
 
@@ -19,8 +19,8 @@
 }
 else
 {
-    <RadzenButton Icon="add_circle_outline" style="margin-bottom: 10px" Text="Add" Click="@OpenInsertDialog" />
-    <RadzenDataGrid IsLoading="@this.stateContainer.IsInProgress" Count="@this.teams.Count()" Data="@this.teams" LoadData="@LoadDataAsync" AllowFiltering="true" AllowColumnResize="true" FilterMode="FilterMode.Simple" PageSize="20" AllowPaging="true" AllowSorting="true" 
+    <RadzenButton Icon="add_circle_outline" style="margin-bottom: 10px" Text="Add" Click=@AddNewTeam />
+    <RadzenDataGrid @ref="grid" IsLoading="@this.stateContainer.IsInProgress" Count="@this.teams.Count()" Data="@this.teams" LoadData="@LoadData" AllowFiltering="true" AllowColumnResize="true" FilterMode="FilterMode.Simple" PageSize="20" AllowPaging="true" AllowSorting="true" 
      TItem="Team" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.And">
         <Columns>
             <RadzenDataGridColumn TItem="Team" Property="Name" Filterable="true" Title="Name" Frozen="true" Width="70px" />
@@ -28,8 +28,9 @@ else
     </RadzenDataGrid>
 }
 
-
 @code {
+
+    RadzenDataGrid<Team> grid;
 
     private int count { get; set; }
 
@@ -41,7 +42,7 @@ else
         this.teams = this.stateContainer.Teams.ToList();
     }
 
-    private async Task LoadDataAsync(LoadDataArgs args)
+    private void LoadData(LoadDataArgs args)
     {
         var query = this.stateContainer.Teams.AsQueryable();
 
@@ -58,10 +59,29 @@ else
         this.teams = query.Skip(args.Skip.Value).Take(args.Top.Value).ToList();
     }
 
-    public async Task OpenInsertDialog()
+    public async Task AddNewTeam()
     {
-        await DialogService.OpenAsync<TeamCardPage>("Add new team",
-            new Dictionary<string, object>() { { "TeamID", Guid.Empty } },
-            new DialogOptions() { Width = "700px", Height = "500px", Resizable = true, Draggable = false });
+        var team = new Team() { Users = Array.Empty<TeamUser>() };
+        bool save = await this.dialogService.OpenAsync<TeamCardPage>("Add new team",
+             new Dictionary<string, object>() { { "Team", team } },
+             new DialogOptions() { Width = "600px", Resizable = true, Draggable = false });
+
+        if (save)
+        {
+            await this.SaveChangesAsync(true, team);
+            await this.grid.Reload();
+        }
+    }
+
+    private async Task SaveChangesAsync(bool isNew, Team team)
+    {
+        var isSuccess = isNew ?
+            await this.stateContainer.TryCreateTeamAsync(this.apiClient, team) :
+            await this.stateContainer.TryUpdateTeamAsync(this.apiClient, team);
+
+        if (isSuccess)
+        {
+            await this.stateContainer.TryFetchTeamsAsync(this.apiClient);
+        }
     }
 }

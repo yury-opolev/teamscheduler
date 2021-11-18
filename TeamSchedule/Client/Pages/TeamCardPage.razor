@@ -1,47 +1,24 @@
-﻿@inject ApiClient apiClient
+﻿
+@inject ApiClient apiClient
 @inject StateContainer stateContainer
-@inject DialogService DialogService
+@inject DialogService dialogService
 
 <RadzenCard Style="margin-bottom: 20px;">
-    <div class="row">
-        <div class="col">
-            <div>Name:</div>
-            <b>@team.Name</b>
-        </div>
-    </div>
+    <RadzenTextBox Placeholder="Name" @bind-Value=@Team.Name />
 </RadzenCard>
 <div class="row">
     <div class="col-md-12">
-        <RadzenButton Click="@((args) => this.Close(true))" Text="OK" Style="margin-bottom: 10px; width: 150px" />
-        <RadzenButton Click="@((args) => this.Close(false))" ButtonStyle="ButtonStyle.Secondary" Text="Cancel" Style="margin-bottom: 10px; width: 150px" />
+        <RadzenButton Click="@((args) => this.dialogService.Close(true))" Text="Save" Style="margin-bottom: 10px; width: 150px" />
+        <RadzenButton Click="@((args) => this.dialogService.Close(false))" ButtonStyle="ButtonStyle.Secondary" Text="Cancel" Style="margin-bottom: 10px; width: 150px" />
     </div>
 </div>
 
 @code {
 
-    [Parameter] public int TeamID { get; set; }
-
-    private Team team;
+    [Parameter] public Team Team { get; set; }
 
     protected override void OnInitialized()
     {
-        if (Guid.Empty.Equals(TeamID))
-        {
-            team = new Team() { Id = Guid.NewGuid() };
-        }
-        else
-        {
-            team = this.stateContainer.Teams.First(t => TeamID.Equals(t.Id));
-        }
-    }
-
-    private async Task Close(bool save)
-    {
-        if (save)
-        {
-            await Task.CompletedTask;
-        }
-
-        this.DialogService.Close(save);
+        //...
     }
 }
