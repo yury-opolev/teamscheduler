@@ -2,11 +2,10 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
-using TeamSchedule.Server.Core.Storage;
+using TeamSchedule.Shared.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 
@@ -21,12 +20,11 @@ builder.Services.AddRazorPages();
 
 builder.Services.AddApplicationInsightsTelemetry(builder.Configuration["APPINSIGHTS_CONNECTIONSTRING"]);
 
-builder.Services.AddDbContext<TeamScheduleContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("TeamScheduleContext")));
+builder.Services.AddDbContext<TeamScheduleContext>(
+        options => options.UseSqlite(builder.Configuration.GetConnectionString("TeamScheduleContext")));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseWebAssemblyDebugging();
@@ -57,7 +55,7 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
-        var context = services.GetRequiredService<TeamScheduleContext>();
+        using var context = services.GetRequiredService<TeamScheduleContext>();
         context.Database.EnsureCreated();
     }
     catch (Exception ex)

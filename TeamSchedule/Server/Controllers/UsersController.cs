@@ -6,8 +6,9 @@ namespace TeamSchedule.Server.Controllers
 {
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.EntityFrameworkCore;
     using Microsoft.Identity.Web.Resource;
-    using TeamSchedule.Server.Core.Storage;
+    using TeamSchedule.Shared.Core;
     using TeamSchedule.Shared.Model;
 
     [Authorize]
@@ -20,10 +21,10 @@ namespace TeamSchedule.Server.Controllers
 
         private readonly TeamScheduleContext context;
 
-        public UsersController(ILogger<UsersController> logger, TeamScheduleContext teamScheduleContext)
+        public UsersController(ILogger<UsersController> logger, TeamScheduleContext context)
         {
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            this.context = teamScheduleContext ?? throw new ArgumentNullException(nameof(teamScheduleContext));
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         [HttpGet]

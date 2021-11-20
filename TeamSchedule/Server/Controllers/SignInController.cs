@@ -6,9 +6,10 @@ namespace TeamSchedule.Server.Controllers
 {
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.EntityFrameworkCore;
     using Microsoft.Identity.Web.Resource;
     using TeamSchedule.Server.Core;
-    using TeamSchedule.Server.Core.Storage;
+    using TeamSchedule.Shared.Core;
     using TeamSchedule.Shared.Model;
 
     [Authorize]
@@ -21,10 +22,10 @@ namespace TeamSchedule.Server.Controllers
 
         private readonly TeamScheduleContext context;
 
-        public SignInController(ILogger<SignInController> logger, TeamScheduleContext teamScheduleContext)
+        public SignInController(ILogger<SignInController> logger, TeamScheduleContext context)
         {
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            this.context = teamScheduleContext ?? throw new ArgumentNullException(nameof(teamScheduleContext));
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         [HttpGet]
@@ -47,8 +48,12 @@ namespace TeamSchedule.Server.Controllers
             this.context.Users.Add(new TeamUser()
             {
                 Id = Guid.NewGuid(),
-                Name = User.Identity.Name,
-                Email = ClaimsPrincipalHelper.GetEmail(User)
+                DisplayName = User.Identity.Name,
+                FirstName = String.Empty,
+                LastName = String.Empty,
+                Email = ClaimsPrincipalHelper.GetEmail(User),
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = User.Identity.Name ?? String.Empty
             });
 
             this.context.SaveChanges();

@@ -6,8 +6,9 @@ namespace TeamSchedule.Server.Controllers
 {
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.EntityFrameworkCore;
     using Microsoft.Identity.Web.Resource;
-    using TeamSchedule.Server.Core.Storage;
+    using TeamSchedule.Shared.Core;
     using TeamSchedule.Shared.Model;
 
     [Authorize]
@@ -20,10 +21,10 @@ namespace TeamSchedule.Server.Controllers
 
         private readonly TeamScheduleContext context;
 
-        public TeamsController(ILogger<TeamsController> logger, TeamScheduleContext teamScheduleContext)
+        public TeamsController(ILogger<TeamsController> logger, TeamScheduleContext context)
         {
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            this.context = teamScheduleContext ?? throw new ArgumentNullException(nameof(teamScheduleContext));
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         [HttpGet]
@@ -43,6 +44,14 @@ namespace TeamSchedule.Server.Controllers
                 return this.Conflict(new { Status = "conflict", Message = "Team already exists" });
             }
 
+            if (Guid.Empty.Equals(team.Id))
+            {
+                team.Id = Guid.NewGuid();
+            }
+
+            team.CreatedAt = DateTime.UtcNow;
+            team.CreatedBy = User.Identity.Name;
+
             this.context.Teams.Add(team);
             this.context.SaveChanges();
 
@@ -52,17 +61,23 @@ namespace TeamSchedule.Server.Controllers
         [HttpPut]
         public IActionResult UpdateTeam([FromBody] Team team)
         {
-            this.logger.LogInformation($"CreateTeam - user '{User.Identity.Name}'");
-            var teamExists = !(this.context.Teams.FirstOrDefault(t => t.Name.Equals(team.Name)) is default(Team));
-            if (teamExists)
+            this.logger.LogInformation($"UpdateTeam - user '{User.Identity.Name}'");
+            var teamWithNameExists = !(this.context.Teams.FirstOrDefault(t => !t.Id.Equals(team.Id) && t.Name.Equals(team.Name)) is default(Team));
+            if (teamWithNameExists)
             {
-                return this.Conflict(new { Status = "conflict", Message = "Team already exists" });
+                return this.Conflict(new { Status = "conflict", Message = "Team with provided name already exists" });
             }
 
-            this.context.Teams.Add(team);
+            var existingTeam = this.context.Teams.FirstOrDefault(t => t.Id.Equals(team.Id));
+            if (existingTeam is default(Team))
+            {
+                return this.BadRequest(new { Status = "bad_request", Message = "Team not exists" });
+            }
+
+            existingTeam.Name = team.Name;
             this.context.SaveChanges();
 
-            return this.Ok(new { Status = "ok", Message = "Team created" });
+            return this.Ok(new { Status = "ok", Message = "Team updated" });
         }
     }
 }

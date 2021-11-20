@@ -14,5 +14,10 @@ namespace TeamSchedule.Shared.Model
         public string Name { get; set; }
 
         public ICollection<TeamUser> Users { get; set; }
+
+        public ICollection<TeamDuty> Duties { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+        public string CreatedBy { get; set; }
     }
 }

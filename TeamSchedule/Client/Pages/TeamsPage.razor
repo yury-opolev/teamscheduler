@@ -61,7 +61,13 @@ else
 
     public async Task AddNewTeam()
     {
-        var team = new Team() { Users = Array.Empty<TeamUser>() };
+        var team = new Team() 
+        {
+            Users = Array.Empty<TeamUser>(),
+            Duties = Array.Empty<TeamDuty>(),
+            CreatedBy = string.Empty
+        };
+
         bool save = await this.dialogService.OpenAsync<TeamCardPage>("Add new team",
              new Dictionary<string, object>() { { "Team", team } },
              new DialogOptions() { Width = "600px", Resizable = true, Draggable = false });

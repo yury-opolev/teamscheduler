@@ -38,17 +38,20 @@ namespace TeamSchedule.Client.Core
 
         public async Task CreateTeam(Team team)
         {
-            await this.httpClient.PostAsJsonAsync(TeamsUrl, team);
+            var response = await this.httpClient.PostAsJsonAsync(TeamsUrl, team);
+            await this.HandleResponseAsync(response);
         }
 
         public async Task UpdateTeam(Team team)
         {
-            await this.httpClient.PutAsJsonAsync(string.Format(TeamUrl, team.Id), team);
+            var response = await this.httpClient.PutAsJsonAsync(string.Format(TeamUrl, team.Id), team);
+            await this.HandleResponseAsync(response);
         }
 
         public async Task DeleteTeam(Team team)
         {
-            await this.httpClient.DeleteAsync(string.Format(TeamUrl, team.Id));
+            var response = await this.httpClient.DeleteAsync(string.Format(TeamUrl, team.Id));
+            await this.HandleResponseAsync(response);
         }
 
         public async Task AddTeamUser(Team team, TeamUser user)
@@ -69,6 +72,12 @@ namespace TeamSchedule.Client.Core
         public async Task<IList<TeamUser>> GetTeamUsers(Guid teamId)
         {
             return await this.httpClient.GetFromJsonAsync<IList<TeamUser>>(string.Format(TeamUsersUrl, teamId));
+        }
+
+        private async Task HandleResponseAsync(HttpResponseMessage response)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Response: {response.StatusCode} - {content}");
         }
     }
 }
